@@ -1,0 +1,21 @@
+# Données du challenge à télécharger séparément
+/Data/
+/data/
+
+# Environnements Python et caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Configuration locale et secrets
+.env
+.env.*
+!.env.example
+
+# Fichiers locaux de vérification
+verification_sections_4_5.ipynb
+Thumbs.db
+.DS_Store
