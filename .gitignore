@@ -19,3 +19,10 @@ __pycache__/
 verification_sections_4_5.ipynb
 Thumbs.db
 .DS_Store
+
+# Données placées à la racine (fichiers téléchargés depuis Kaggle, compressés ou non)
+/train.csv*
+/test.csv*
+/sample_submission.csv
+# Tableaux de variables régénérés par travail_partie_1 (section 7)
+/donnees_preparees/
