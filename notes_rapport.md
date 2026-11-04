@@ -629,6 +629,21 @@ Tailles de fenêtres testées (découpage 0, gain de F1 en combinaison) : 2 × 2
 
 **Potentiel non exploité :** 45 des 64 erreurs de la v4 (découpage 0) sont bien classées par au moins un des modèles calculés (Ridge en rattrape 21), et le bon utilisateur est 2e dans 32 cas. Mais chaque modèle rattrape des sessions différentes, et aucune règle de combinaison testée (moyenne, méta-modèle, sélection gloutonne) ne sait reconnaître, session par session, quel modèle croire.
 
+**Méta-modèle riche (choisir le bon modèle session par session) :**
+- Candidats d'une session : top-5 de la v4 + premier choix de chacun des 17 modèles de base (≈ 5 candidats par session ; le bon utilisateur en fait partie dans 99,6 à 99,7 % des cas).
+- Variables par candidat : probabilité et rang selon chaque modèle (34), nombre de modèles qui le placent en tête, probabilité et rang dans la v4, log-fréquence de l'utilisateur ; variables de session : longueur, confiance et marge de la v4, part des modèles d'accord avec la v4.
+- Apprentissage imbriqué : méta-modèle entraîné sur 3/4 des sessions, évalué sur le quart restant, à partir de prédictions de base déjà hors échantillon ; 3 découpages.
+
+| Méta-modèle | Gain de F1 par rapport à la v4 (découpages 0 / 1 / 2) | Moyenne |
+|---|---|---|
+| Gradient boosting (300 itérations, 15 feuilles) | +0,11 / −0,14 / −0,18 | −0,07 |
+| Gradient boosting fortement régularisé | −0,04 / 0,00 / −0,27 | −0,10 |
+| Gradient boosting, variables agrégées seulement | +0,04 / −0,03 / −0,31 | −0,10 |
+| Régression logistique, toutes variables | +0,08 / +0,02 / −0,20 | −0,03 |
+| Régression logistique, agrégées + probabilités | +0,08 / −0,02 / −0,12 | −0,02 |
+
+→ **Écarté.** Avec ≈ 3 000 sessions, le méta-modèle n'a pas assez d'exemples d'erreurs (≈ 60 par découpage) pour apprendre de façon fiable quand faire confiance à quel modèle : il sur-ajuste les quelques cas vus.
+
 **Plateau atteint :** v4 = 0,981 / 0,979 en validation croisée (≈ 62 erreurs sur 3 276). Les nouveaux modèles, même meilleurs seuls, n'améliorent plus l'ensemble : ils se trompent sur les mêmes sessions.
 
 **Conclusion (avant la deuxième session, 7.13) :** avec cette famille d'approches, la validation croisée plafonnait vers **0,976 à 0,978** de F1 macro ; la v4 la porte à 0,979. Les erreurs restantes (≈ 70 sur 3 276) sont surtout des sessions courtes et des utilisateurs à 4 ou 5 sessions ; 52 sessions sont mal classées sur les 3 découpages, des cas probablement ambigus. Le score public (0,985) dépasse la validation croisée parce qu'il porte sur une petite partie du test, où chaque session pèse lourd. Atteindre 0,99 de façon fiable demanderait une information nouvelle, que nous n'avons pas trouvée.
