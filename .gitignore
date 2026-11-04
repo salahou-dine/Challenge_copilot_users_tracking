@@ -26,3 +26,5 @@ Thumbs.db
 /sample_submission.csv
 # Tableaux de variables régénérés par travail_partie_1 (section 7)
 /donnees_preparees/
+# Prédictions hors échantillon mises en cache par recherche_ameliorations.py (≈ 100 Mo, régénérables)
+/travail_partie_2/resultats/cache_oof/
