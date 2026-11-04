@@ -580,6 +580,22 @@ Tailles de fenêtres testées (découpage 0, gain de F1 en combinaison) : 2 × 2
 
 **Leçon :** au-delà de 0,97, chaque piste rapporte quelques dixièmes de point et le premier découpage est souvent trompeur (aug8 : +0,59 puis −0,14). La validation répétée est indispensable.
 
+**Résultat Kaggle : v2 = 0,980, v3 = 0,985.** Le notebook de la partie 2 (section 8 et suivantes) reproduit la v3 à l'identique ; script `recherche_ameliorations.py`, résultats `resultats/ameliorations.csv`. Analyse des erreurs de la v3 (découpage 0) : **71 erreurs** (105 pour la combinaison de la section 7, 161 pour les forêts) ; accuracy sous 50 actions 0,766 (forêts) → 0,851 → **0,894** ; entre 51 et 100 actions 0,880 → 0,934 → **0,957** ; confusions `skm` / `slq` / `flj` 16 → 12 → 9. Dans le SVM avec temps, 170 des 1 000 mots les plus influents contiennent `TEMPS` (ex. « TEMPS >> Raccourci(SaisiEcritForm) » pour `skm`) : le rythme est une signature.
+
+### 7.12 Au-delà de la v3 (04/11) : pistes sans gain significatif
+
+| Piste | Résultat (gain de F1 par rapport à la v3) | Verdict |
+|---|---|---|
+| 4e et 5e SVM augmentés, fenêtres tirées différemment (*bagging*) | +0,18 / −0,02 (2 découpages) | instable |
+| SVM augmenté avec 15 fenêtres de 20 à 150 | +0,21 (1 découpage) | non confirmé |
+| SVM avec temps C = 3 en 4e modèle | +0,06 / +0,04 / +0,10 | stable mais négligeable |
+| Mots « hiérarchie des écrans » (`MODULE=`, `SOUSMODULE=`) | +0,10 (1 découpage, meilleur réglage choisi a posteriori) | négligeable |
+| Mots « début / fin de session » (30 premières / dernières actions) | +0,16 (idem) | négligeable |
+| Auto-apprentissage (*pseudo-labeling* : sessions d'évaluation les plus sûres ajoutées à l'entraînement, 50 % ou 80 %) | +0,01 à +0,06 (1 découpage) | aucun gain |
+| v3 avec T = 0,7, w = 0,95 | +0,10 / +0,08 / +0,06 | stable mais négligeable |
+
+**Conclusion :** avec cette famille d'approches, la validation croisée plafonne vers **0,976 à 0,978** de F1 macro. Les erreurs restantes (≈ 70 sur 3 276) sont surtout des sessions courtes et des utilisateurs à 4 ou 5 sessions ; 52 sessions sont mal classées sur les 3 découpages, des cas probablement ambigus. Le score public (0,985) dépasse la validation croisée parce qu'il porte sur une petite partie du test, où chaque session pèse lourd. Atteindre 0,99 de façon fiable demanderait une information nouvelle, que nous n'avons pas trouvée.
+
 ## 8. Questions ouvertes
 
 - Sens du suffixe `1` (page Kaggle).
