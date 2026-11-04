@@ -428,7 +428,11 @@ Script `travail_partie_2/recherche_hyperparametres.py` (≈ 1 h), résultats dan
 | 02/11/2026 | Extra Trees 500 arbres, `class_weight='balanced'`, `max_features=0.15` | 0,930 | 0,950 / 0,946 |
 | 02/11/2026 | **Moyenne des probabilités RF + ET** (ensemble, ET avec `min_samples_leaf=1`) | **0,938** | **0,952 / 0,949** |
 | à soumettre | Ensemble RF + ET réglés (ET avec `min_samples_leaf=2`) | ? | 0,951 / 0,950 |
-| 03/11/2026 | **SVM TF-IDF (actions + paires + composants) + forêts RF + ET, T = 0,2, poids SVM 0,6** | **0,969** | **0,968 / 0,965** (3 découpages) |
+| 03/11/2026 | SVM TF-IDF (actions + paires + composants) + forêts RF + ET, T = 0,2, poids SVM 0,6 | 0,969 | 0,968 / 0,965 (3 découpages) |
+| 04/11/2026 | v2 : SVM avec temps (C = 10) + forêts, T = 0,2, w = 0,7, règle du navigateur | 0,980 | 0,974 / 0,971 (3 découpages) |
+| 04/11/2026 | **v3 : moyenne de 3 SVM (temps C = 10 ; temps C = 10 augmenté ; sans temps C = 3) + forêts, T = 0,5, w = 0,9, règle du navigateur** | **0,985** | **0,978 / 0,975** (3 découpages) |
+
+- v2 et v3 ne diffèrent de la soumission à 0,969 que de 2 et 5 prédictions, mais gagnent 1,1 et 1,6 point : la partie publique du test est petite, chaque session y pèse lourd. L'ordre des scores Kaggle reste celui de la validation croisée.
 
 (Les valeurs de validation croisée de ce tableau sont calculées sur les prédictions hors échantillon de `cross_val_predict`, d'où 0,944 au lieu de 0,942 pour la moyenne des plis.)
 
@@ -537,6 +541,44 @@ Le classement Kaggle montre des scores de 0,98 : notre conclusion « limite de l
 - Code : `travail_partie_2/representation_texte.py` (représentation texte, SVM, combinaison) et `travail_partie_2/recherche_tfidf_combinaison.py` (recherche, ≈ 25 min, résultats dans `resultats/tfidf_variantes.csv` et `resultats/combinaison.csv`).
 
 **Légitimité de la combinaison :** combiner des modèles (*ensemble learning*) est une technique standard, citée dans les indications (« modèle ensembliste »). Elle est valide ici parce que : (1) la combinaison et ses réglages (T, poids) sont choisis **uniquement sur le train**, par validation croisée ; (2) aucune information du test (étiquettes ou distribution) n'est utilisée ; (3) le tout est un modèle unique, reproductible et expliqué.
+
+### 7.11 Vers 0,98 : améliorations du modèle combiné (03-04/11)
+
+Méthode : prédictions hors échantillon de chaque modèle de base calculées une fois par découpage (graines 0, 1, 2) et mises en cache, puis combinaisons évaluées sur les 3 découpages. **Une version n'est retenue que si elle bat la référence sur les 3 découpages.**
+
+**Étape 1 : v2** (référence de départ : SVM + forêts, 0,968 / 0,965)
+
+| Piste | Gain de F1 | Verdict |
+|---|---|---|
+| Règle du navigateur (probabilité nulle pour les utilisateurs d'un autre navigateur) | +0,2 | retenue |
+| Repères de temps gardés dans la séquence (mot `TEMPS`, consécutifs fusionnés) : les paires « action >> TEMPS » encodent le rythme | +0,2 à +0,3 | retenue |
+| SVM moins régularisé (C = 3 ou 10) | +0,2 à +0,3 | retenue (C = 10) |
+| TF-IDF binaire | +0,2, sans gain cumulé | écartée |
+| SVM sans pondération des classes | −1 | écartée |
+| Régression logistique sur TF-IDF (seule 0,942 ; en 3e modèle) | 0 | écartée |
+| Plus proches voisins cosinus sur TF-IDF (seuls 0,85) | — | écartée |
+| Recherche de copies ou de préfixes communs entre train et test | aucun | pas de raccourci dans les données |
+
+**v2 = SVM avec temps (C = 10) + forêts, T = 0,2, w = 0,7, règle du navigateur : 0,974 / 0,971** (gain +0,62 / +0,63 / +0,53 point selon le découpage).
+
+**Étape 2 : analyse des erreurs de la v2** (découpage 0) : 86 erreurs ; le bon utilisateur est 2e dans 58 % des cas, dans le top 5 dans 86 % ; confiance médiane 0,12 sur les erreurs contre 0,78 sur les bonnes réponses ; erreurs dispersées entre de nombreuses paires ; 52 sessions mal classées sur les 3 découpages (cas vraiment ambigus).
+
+**Étape 3 : pistes testées après la v2**
+
+| Piste | Résultat | Verdict |
+|---|---|---|
+| Méta-modèle (*stacking* : régression logistique sur les scores, rangs, interactions avec la longueur) | +0,06 / +0,16 / −0,12 | écarté : la façon de combiner n'est pas le facteur limitant |
+| Mots de navigation entre écrans (paires et triplets d'écrans visités) | −0,04 à −0,08 | écartés |
+| Mots de rythme (nombre d'actions par fenêtre de 5 s, en catégories) | +0,1 (1 découpage) | écartés |
+| Naive Bayes multinomial / complément sur TF-IDF (seuls 0,72 à 0,80) | — | écartés |
+| **Augmentation de données** : fenêtres extraites des sessions d'entraînement (uniquement dans les plis d'entraînement) | 8 fenêtres de 30 à 200 : +0,59 / +0,13 / −0,14 | instable seule ; utile en moyenne de SVM |
+| **Moyenne de 3 SVM** (temps C = 10 ; temps C = 10 augmenté ; sans temps C = 3) + forêts, T = 0,5, w = 0,9, navigateur | **+0,47 / +0,49 / +0,12** | **retenue (v3)** |
+
+Tailles de fenêtres testées (découpage 0, gain de F1 en combinaison) : 2 × 200-2 000 : +0,08 ; 3 × 50-400 : +0,34 ; 5 × 100-1 000 : +0,28 ; 8 × 30-200 : +0,59 ; 15 × 20-150 : +0,25. Les fenêtres courtes visent les sessions courtes, où se concentrent les erreurs, mais le gain varie beaucoup selon le découpage.
+
+**v3 : 0,978 / 0,975** en validation croisée (3 découpages). Soumission `submission_v3_3svm.csv` (226 utilisateurs prédits ; 3 prédictions différentes de la v2, 5 de la soumission à 0,969).
+
+**Leçon :** au-delà de 0,97, chaque piste rapporte quelques dixièmes de point et le premier découpage est souvent trompeur (aug8 : +0,59 puis −0,14). La validation répétée est indispensable.
 
 ## 8. Questions ouvertes
 
