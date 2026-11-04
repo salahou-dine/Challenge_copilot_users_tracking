@@ -594,7 +594,31 @@ Tailles de fenêtres testées (découpage 0, gain de F1 en combinaison) : 2 × 2
 | Auto-apprentissage (*pseudo-labeling* : sessions d'évaluation les plus sûres ajoutées à l'entraînement, 50 % ou 80 %) | +0,01 à +0,06 (1 découpage) | aucun gain |
 | v3 avec T = 0,7, w = 0,95 | +0,10 / +0,08 / +0,06 | stable mais négligeable |
 
-**Conclusion :** avec cette famille d'approches, la validation croisée plafonne vers **0,976 à 0,978** de F1 macro. Les erreurs restantes (≈ 70 sur 3 276) sont surtout des sessions courtes et des utilisateurs à 4 ou 5 sessions ; 52 sessions sont mal classées sur les 3 découpages, des cas probablement ambigus. Le score public (0,985) dépasse la validation croisée parce qu'il porte sur une petite partie du test, où chaque session pèse lourd. Atteindre 0,99 de façon fiable demanderait une information nouvelle, que nous n'avons pas trouvée.
+### 7.13 Deuxième session d'améliorations (04/11) : autres modèles, réglages et sélection de variables
+
+| Levier | Piste | Résultat (F1, gain par rapport à la v3) | Verdict |
+|---|---|---|---|
+| A | **Correction des fréquences de classes** : probabilités divisées par (fréquence de l'utilisateur)^α, pour favoriser les petits utilisateurs (cohérent avec le F1 macro) | α = 0,1 : +0,42 / +0,03 / +0,05 ; α ≥ 0,2 ou < 0 : moins bien | **retenue** (α = 0,1) |
+| B | Autres formulations du SVM linéaire (seuls, découpage 0) : Crammer-Singer 0,951 ; perte *hinge* 0,952 ; **sans IDF** 0,952 ; Ridge 0,937 ; SGD *modified huber* 0,894 ; TF non logarithmique 0,905 | en 4e modèle : +0,1 sauf **sans IDF +0,30** | **SVM sans IDF retenu** (+0,31 / +0,24 / +0,12 avec α) |
+| C | Forêts enrichies de 200 composantes SVD du TF-IDF (SVD apprise dans chaque pli) | seules 0,9504 (vs 0,9498) ; combinaison −0,05 | écartée |
+| D | Sélection non supervisée des variables des forêts (non calculée jusqu'au bout, disque plein) | — | non conclue |
+| — | **Bagging de SVM augmentés** : 3 SVM augmentés supplémentaires (8 × 30-200 avec deux autres tirages, 15 × 20-150) | +0,10 / +0,21 / +0,39 | **retenu** |
+
+**v4 = 7 SVM** (avec temps C = 10 ; 4 augmentés ; sans temps C = 3 ; avec temps sans IDF) **+ forêts, T = 0,7, w = 0,95, règle du navigateur, correction des fréquences α = 0,1** : **0,981 d'accuracy, F1 macro 0,979** (gain sur la v3 : +0,23 / +0,38 / +0,58 point ; pire découpage 0,975). Soumission `submission_v4_7svm.csv`.
+
+**Kaggle : v4 = 0,985**, comme la v3 : les 2 prédictions qui diffèrent ne sont visiblement pas dans la partie publique du test.
+
+**Pistes testées après la v4 :**
+
+| Piste | Résultat | Verdict |
+|---|---|---|
+| **Repères de temps répétés** (tXX identique au précédent, ≈ 25 000 cas) : part de repères répétés très discriminante (η² = 0,58 ; 0 % pour `azn`, `azx`, `bez`, ≈ 13 % pour `syt`, `sdx`, `wwk` ; surtout après Raccourci, Clic sur une grille d'historique, Entrée en saisie dans un formulaire) | SVM avec mot `TREP` : identique au SVM avec temps ; forêts + part et nombre de repères répétés : +0,04 / 0 / +0,12 | information déjà captée indirectement par les paires « action >> TEMPS » |
+| Autres artefacts : apostrophe typographique, préfixe `fr.` des écrans, parenthèses en majuscules (MAINT, DEV) | η² de 0,34 à 0,55 mais déjà dans les types d'actions et les écrans | rien de nouveau |
+| SVM augmenté sans IDF (meilleur SVM seul : F1 0,9585) ; SVM augmenté sans temps (0,9516) | ajoutés à la v4 : −0,29 à +0,12 | saturation de l'ensemble |
+
+**Plateau atteint :** v4 = 0,981 / 0,979 en validation croisée (≈ 62 erreurs sur 3 276). Les nouveaux modèles, même meilleurs seuls, n'améliorent plus l'ensemble : ils se trompent sur les mêmes sessions.
+
+**Conclusion (avant la deuxième session, 7.13) :** avec cette famille d'approches, la validation croisée plafonnait vers **0,976 à 0,978** de F1 macro ; la v4 la porte à 0,979. Les erreurs restantes (≈ 70 sur 3 276) sont surtout des sessions courtes et des utilisateurs à 4 ou 5 sessions ; 52 sessions sont mal classées sur les 3 découpages, des cas probablement ambigus. Le score public (0,985) dépasse la validation croisée parce qu'il porte sur une petite partie du test, où chaque session pèse lourd. Atteindre 0,99 de façon fiable demanderait une information nouvelle, que nous n'avons pas trouvée.
 
 ## 8. Questions ouvertes
 
