@@ -616,6 +616,19 @@ Tailles de fenêtres testées (découpage 0, gain de F1 en combinaison) : 2 × 2
 | Autres artefacts : apostrophe typographique, préfixe `fr.` des écrans, parenthèses en majuscules (MAINT, DEV) | η² de 0,34 à 0,55 mais déjà dans les types d'actions et les écrans | rien de nouveau |
 | SVM augmenté sans IDF (meilleur SVM seul : F1 0,9585) ; SVM augmenté sans temps (0,9516) | ajoutés à la v4 : −0,29 à +0,12 | saturation de l'ensemble |
 
+**Autres familles de modèles et sélection de variables (après la v4) :**
+
+| Piste | Seul (F1) | Ajouté à la v4 | Verdict |
+|---|---|---|---|
+| Profil moyen par utilisateur (Rocchio, cosinus sur TF-IDF) | 0,895 | rattrape 12 des 64 erreurs mais en crée davantage : −0,07 | écarté |
+| Session la plus semblable par utilisateur (max ou moyenne des 2 meilleurs cosinus) | 0,864 / 0,875 | −0,1 | écarté |
+| Ridge sur TF-IDF | 0,938 | +0,01 / +0,02 / 0 | écarté |
+| SVM perte *hinge* ; SVM Crammer-Singer | 0,950 / 0,950 | ≤ +0,05 | écartés |
+| Sélection d'ensemble gloutonne (Caruana) parmi 13 modèles, apprise sur 2 découpages, testée sur le 3e | — | 0,976 / 0,978 / 0,969 contre 0,978 / 0,983 / 0,975 pour la v4 | sur-ajustement, écartée |
+| Sélection de variables par χ² pour le SVM (10 000 ou 30 000 mots sur ≈ 82 000) | 0,939 / 0,948 (vs 0,952) | — | dégrade : les mots rares sont des signatures |
+
+**Potentiel non exploité :** 45 des 64 erreurs de la v4 (découpage 0) sont bien classées par au moins un des modèles calculés (Ridge en rattrape 21), et le bon utilisateur est 2e dans 32 cas. Mais chaque modèle rattrape des sessions différentes, et aucune règle de combinaison testée (moyenne, méta-modèle, sélection gloutonne) ne sait reconnaître, session par session, quel modèle croire.
+
 **Plateau atteint :** v4 = 0,981 / 0,979 en validation croisée (≈ 62 erreurs sur 3 276). Les nouveaux modèles, même meilleurs seuls, n'améliorent plus l'ensemble : ils se trompent sur les mêmes sessions.
 
 **Conclusion (avant la deuxième session, 7.13) :** avec cette famille d'approches, la validation croisée plafonnait vers **0,976 à 0,978** de F1 macro ; la v4 la porte à 0,979. Les erreurs restantes (≈ 70 sur 3 276) sont surtout des sessions courtes et des utilisateurs à 4 ou 5 sessions ; 52 sessions sont mal classées sur les 3 découpages, des cas probablement ambigus. Le score public (0,985) dépasse la validation croisée parce qu'il porte sur une petite partie du test, où chaque session pèse lourd. Atteindre 0,99 de façon fiable demanderait une information nouvelle, que nous n'avons pas trouvée.
