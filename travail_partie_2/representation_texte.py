@@ -88,10 +88,15 @@ class Analyseur:
         return mots_session(document, self.paires, self.triplets, self.composants)
 
 
-def svm_tfidf(C=1.0, min_df=1, **options_mots):
-    """TF-IDF des mots de session + SVM linéaire pondéré."""
+def svm_tfidf(C=1.0, min_df=1, use_idf=True, **options_mots):
+    """TF-IDF des mots de session + SVM linéaire pondéré.
+
+    use_idf=False : pondération par la seule fréquence (log) des mots dans la session, sans pénaliser les mots
+    fréquents dans l'ensemble des sessions ; donne un SVM différent, utile en complément.
+    """
     return make_pipeline(
-        TfidfVectorizer(analyzer=Analyseur(**options_mots), sublinear_tf=True, lowercase=False, min_df=min_df),
+        TfidfVectorizer(analyzer=Analyseur(**options_mots), sublinear_tf=True, lowercase=False, min_df=min_df,
+                        use_idf=use_idf),
         LinearSVC(C=C, class_weight='balanced'),
     )
 
