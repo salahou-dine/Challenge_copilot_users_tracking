@@ -120,6 +120,17 @@ def combiner(scores_svm, proba_forets, temperature, poids_svm):
     return poids_svm * proba_svm + (1 - poids_svm) * np.asarray(proba_forets)
 
 
+def combiner_geometrique(scores_svm, proba_forets, temperature, poids_forets, lissage=0.01):
+    """Combinaison géométrique : moyenne pondérée des log-probabilités (et non des probabilités).
+
+    Renvoie un score par (session, utilisateur), à maximiser. Un modèle qui juge un utilisateur très improbable
+    pèse davantage qu'avec la moyenne arithmétique ; `lissage` évite log(0) pour les probabilités nulles des forêts.
+    """
+    liste = scores_svm if isinstance(scores_svm, (list, tuple)) else [scores_svm]
+    log_svm = np.mean([np.log(softmax(s, temperature) + 1e-300) for s in liste], axis=0)
+    return (1 - poids_forets) * log_svm + poids_forets * np.log(np.asarray(proba_forets) + lissage)
+
+
 def fenetres(document, rng, n=8, long_min=30, long_max=200):
     """`n` extraits contigus de `long_min` à `long_max` éléments d'une session (navigateur gardé en tête).
 
