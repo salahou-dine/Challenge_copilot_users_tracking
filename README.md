@@ -64,7 +64,7 @@ Le plus grand marqueur `tXX` représente un horizon temporel enregistré, pas n�
 
 Les dossiers `travail_partie_1/` et `travail_partie_2/` contiennent une chaîne complète, de la lecture des données au fichier de soumission. Ce travail est indépendant de `solution.ipynb`.
 
-**Meilleur score Kaggle : 0,985** (F1 moyen), avec la moyenne de trois SVM linéaires sur une représentation TF-IDF des sessions, combinée à un ensemble de forêts (Random Forest + Extra Trees) et à la règle du navigateur.
+**Meilleur score Kaggle : 0,991** (F1 moyen), avec sept SVM linéaires sur une représentation TF-IDF des sessions et un ensemble de forêts (Random Forest + Extra Trees), combinés par une moyenne géométrique (moyenne des log-probabilités), avec la règle du navigateur et une légère correction des fréquences des utilisateurs.
 
 ### Contenu
 
@@ -72,7 +72,7 @@ Les dossiers `travail_partie_1/` et `travail_partie_2/` contiennent une chaîne 
 |---|---|
 | `travail_partie_1/partie_1_decouverte_donnees.ipynb` | Chargement, exploration (utilisateurs, temps, navigateur, types d'actions, écrans, configurations, chaînes), valeurs manquantes et aberrantes, construction d'un tableau de 616 variables par session |
 | `travail_partie_2/partie_2_modelisation.ipynb` | Protocole d'évaluation, comparaison de 15 modèles, réglage des hyperparamètres, représentation « texte » (TF-IDF + SVM), combinaison, analyse des erreurs, interprétation, soumission |
-| `travail_partie_2/representation_texte.py` | Représentation des sessions en documents (actions brutes, paires d'actions, composants), SVM TF-IDF et combinaison |
+| `travail_partie_2/representation_texte.py` | Représentation des sessions en documents (actions brutes, paires d'actions, composants), SVM TF-IDF, augmentation par extraits, combinaisons arithmétique et géométrique |
 | `travail_partie_2/recherche_hyperparametres.py` | Recherche d'hyperparamètres des forêts et de XGBoost (≈ 1 h) |
 | `travail_partie_2/recherche_tfidf_combinaison.py` | Variantes TF-IDF et réglage de la combinaison sur 3 découpages (≈ 25 min) |
 | `travail_partie_2/recherche_ameliorations.py` | Améliorations v2 et v3 (temps, augmentation, moyenne de SVM, règle du navigateur) sur 3 découpages (≈ 45 min) |
@@ -87,7 +87,7 @@ Les notebooks cherchent `train`, `test` et `sample_submission` au format `.csv` 
 ### Exécution
 
 1. `travail_partie_1/partie_1_decouverte_donnees.ipynb` : exécuter toutes les cellules. La section 7 crée `donnees_preparees/` (tableaux de variables), utilisé par la partie 2.
-2. `travail_partie_2/partie_2_modelisation.ipynb` : exécuter toutes les cellules (≈ 50 min, dont 15 min pour le boosting et 10 min pour les prédictions hors échantillon du modèle final). Il relit les résultats de `resultats/` et ne relance pas les recherches ; il écrit `submission.csv` à la racine.
+2. `travail_partie_2/partie_2_modelisation.ipynb` : exécuter toutes les cellules (≈ 1 h 10, dont 15 min pour le boosting, 25 min pour les prédictions hors échantillon des 7 SVM du modèle final si `resultats/cache_oof/` est absent, et 7 min pour la soumission). Il relit les résultats de `resultats/` et ne relance pas les recherches ; il écrit `submission.csv` à la racine.
 3. Facultatif : relancer les recherches depuis `travail_partie_2/` avec `python recherche_hyperparametres.py`, `python recherche_tfidf_combinaison.py` et `python recherche_ameliorations.py`.
 
 ### Résultats
@@ -102,6 +102,8 @@ Validation croisée stratifiée à 4 plis (moyenne sur 3 découpages pour les co
 | SVM TF-IDF seul (actions + paires + composants) | 0,957 | 0,947 | — |
 | SVM TF-IDF + forêts (T = 0,2, w = 0,6) | 0,968 | 0,965 | 0,969 |
 | v2 : SVM avec repères de temps (C = 10) + forêts + règle du navigateur | 0,974 | 0,971 | 0,980 |
-| **v3 : moyenne de 3 SVM (avec temps ; avec temps + augmentation ; sans temps) + forêts + règle du navigateur** | **0,978** | **0,975** | **0,985** |
+| v3 : moyenne de 3 SVM (avec temps ; avec temps + augmentation ; sans temps) + forêts + règle du navigateur | 0,978 | 0,975 | 0,985 |
+| v4 : moyenne de 7 SVM (+ 3 SVM augmentés, + SVM sans IDF) + forêts + navigateur + correction des fréquences | 0,981 | 0,979 | 0,985 |
+| **v5 : les mêmes modèles, combinaison géométrique (moyenne des log-probabilités, forêts 20 %)** | **0,981** | **0,980** | **0,991** |
 
-Le notebook de la partie 2 reproduit à l'identique la soumission v3 (`soumissions/submission_v3_3svm.csv`). Les autres fichiers de `soumissions/` correspondent aux lignes précédentes du tableau.
+Le notebook de la partie 2 reproduit à l'identique la soumission v5 (`soumissions/submission_v5_geometrique.csv`). Les autres fichiers de `soumissions/` correspondent aux lignes précédentes du tableau.

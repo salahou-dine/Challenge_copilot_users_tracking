@@ -431,6 +431,8 @@ Script `travail_partie_2/recherche_hyperparametres.py` (≈ 1 h), résultats dan
 | 03/11/2026 | SVM TF-IDF (actions + paires + composants) + forêts RF + ET, T = 0,2, poids SVM 0,6 | 0,969 | 0,968 / 0,965 (3 découpages) |
 | 04/11/2026 | v2 : SVM avec temps (C = 10) + forêts, T = 0,2, w = 0,7, règle du navigateur | 0,980 | 0,974 / 0,971 (3 découpages) |
 | 04/11/2026 | **v3 : moyenne de 3 SVM (temps C = 10 ; temps C = 10 augmenté ; sans temps C = 3) + forêts, T = 0,5, w = 0,9, règle du navigateur** | **0,985** | **0,978 / 0,975** (3 découpages) |
+| 04/11/2026 | v4 : moyenne de 7 SVM + forêts, T = 0,7, w = 0,95, règle du navigateur, correction des fréquences α = 0,1 | 0,985 | 0,981 / 0,979 (3 découpages) |
+| 05/11/2026 | **v5 : les mêmes modèles, combinaison géométrique (moyenne des log-probabilités, forêts 20 %), navigateur, α = 0,1** | **0,991** | **0,980** de F1 macro (3 découpages) |
 
 - v2 et v3 ne diffèrent de la soumission à 0,969 que de 2 et 5 prédictions, mais gagnent 1,1 et 1,6 point : la partie publique du test est petite, chaque session y pèse lourd. L'ordre des scores Kaggle reste celui de la validation croisée.
 
@@ -647,6 +649,31 @@ Tailles de fenêtres testées (découpage 0, gain de F1 en combinaison) : 2 × 2
 **Plateau atteint :** v4 = 0,981 / 0,979 en validation croisée (≈ 62 erreurs sur 3 276). Les nouveaux modèles, même meilleurs seuls, n'améliorent plus l'ensemble : ils se trompent sur les mêmes sessions.
 
 **Conclusion (avant la deuxième session, 7.13) :** avec cette famille d'approches, la validation croisée plafonnait vers **0,976 à 0,978** de F1 macro ; la v4 la porte à 0,979. Les erreurs restantes (≈ 70 sur 3 276) sont surtout des sessions courtes et des utilisateurs à 4 ou 5 sessions ; 52 sessions sont mal classées sur les 3 découpages, des cas probablement ambigus. Le score public (0,985) dépasse la validation croisée parce qu'il porte sur une petite partie du test, où chaque session pèse lourd. Atteindre 0,99 de façon fiable demanderait une information nouvelle, que nous n'avons pas trouvée.
+
+### 7.14 Troisième session (05/11) : façon de combiner, transformations, autres modèles → v5
+
+**Combinaison géométrique** (même 7 SVM et forêts que la v4) : au lieu de moyenner les probabilités, on moyenne les **log-probabilités** :
+
+score = 0,8 × moyenne des log-softmax des 7 SVM (T = 1) + 0,2 × log(proba forêts + 0,01) − 0,1 × log(fréquence de l'utilisateur), puis règle du navigateur.
+
+- Intuition : la moyenne géométrique exige que **tous** les modèles trouvent l'utilisateur plausible ; un utilisateur jugé très improbable par un modèle est fortement pénalisé. Les forêts peuvent alors peser 20 % (5 % dans la v4) : elles servent surtout à **éliminer** des candidats.
+- Validation croisée (3 découpages) : F1 macro **0,9797** contre 0,9787 pour la v4, gain **+0,15 / +0,08 / +0,06** point (≈ 3 sessions sur 3 276), stable.
+- Sur le test : 3 prédictions différentes de la v4 (et de la v3). **Kaggle : 0,991** (v4 : 0,985). Le gain public est plus grand que le gain en validation car la partie publique du test est petite ; le score privé peut s'en écarter.
+- Soumission `submission_v5_geometrique.csv`, reproduite par le notebook de la partie 2 (sections 8, 9 et 11).
+
+**Autres pistes testées (sans gain) :**
+
+| Piste | Seul (F1) | Ajouté à l'ensemble | Verdict |
+|---|---|---|---|
+| Extra Trees seuls à la place des forêts RF + ET | — | ≤ v4 | écarté |
+| Plus proches voisins cosinus sur TF-IDF, k = 1, 3, 5, 10 | 0,85 à 0,88 | ≤ 0 : trop sûrs d'eux, erreurs non compensées | écarté |
+| Racine carrée des comptages (au lieu de 1 + log) | 0,952 (vs 0,950) | −0,07 / −0,05 / −0,01 | écarté : mêmes erreurs |
+| Pondération BM25 (fréquence saturée, corrigée par la longueur) | 0,942 | +0,06 / +0,02 / −0,01 | écarté |
+| Norme L1 au lieu de L2 | 0,894 | 0 | écarté |
+| Réseau de neurones (MLP, 512 neurones, sur TF-IDF) | 0,909 | — | écarté |
+
+- Les transformations monotones des variables (log, racine…) n'ont **aucun effet sur les forêts**, qui ne dépendent que de l'ordre des valeurs ; et le TF-IDF utilise déjà une transformation logarithmique (`sublinear_tf`). La transformation utile s'est révélée être celle **des probabilités**, au moment de combiner.
+- **BERT** n'a pas été retenu : vocabulaire pré-entraîné sur du langage naturel, sans rapport avec les actions de Copilote ; limite de 512 sous-mots ≈ 50 actions, alors que la session médiane en compte 340 ; pas de GPU (plusieurs dizaines d'heures pour le protocole à 3 découpages) ; et un réseau simple (MLP) plafonne déjà à 0,909 avec 3 279 sessions pour 247 classes.
 
 ## 8. Questions ouvertes
 
