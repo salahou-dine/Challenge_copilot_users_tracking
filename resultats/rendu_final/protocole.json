@@ -1,0 +1,23 @@
+{
+  "graine": 42,
+  "sessions_apprentissage": 2620,
+  "sessions_validation": 656,
+  "plis": 3,
+  "critere_de_choix": "f1_macro",
+  "svm_finaux": [
+    "SVM TF-IDF avec temps [C = 10]",
+    "SVM augmenté (8 extraits, tirage 0) [C = 10]",
+    "SVM augmenté (8 extraits, tirage 1000) [C = 10]",
+    "SVM augmenté (8 extraits, tirage 2000) [C = 10]",
+    "SVM augmenté (15 extraits courts, tirage 0) [C = 10]",
+    "SVM TF-IDF sans temps [C = 3]",
+    "SVM TF-IDF avec temps, sans IDF [C = 10]"
+  ],
+  "reglages_combinaison": {
+    "temperature": 1.0,
+    "poids_forets": 0.2,
+    "alpha": 0.1,
+    "regle_navigateur": true,
+    "geometrique": true
+  }
+}
